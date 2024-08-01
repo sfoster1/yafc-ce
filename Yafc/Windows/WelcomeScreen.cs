@@ -9,13 +9,14 @@ using Serilog;
 using Yafc.Model;
 using Yafc.Parser;
 using Yafc.UI;
+using NativeFileDialogSharp;
 
 namespace Yafc {
     public class WelcomeScreen : WindowUtility, IProgress<(string, string)>, IKeyboardFocus {
         private readonly ILogger logger = Logging.GetLogger<WelcomeScreen>();
         private bool loading;
         private string? currentLoad1, currentLoad2;
-        private string path = "", dataPath = "", modsPath = "";
+        private string path = "", dataPath = "", modsPath = "", folder = "";
         private bool expensive;
         private bool netProduction;
         private string createText;
@@ -299,6 +300,7 @@ namespace Yafc {
                 modsPath = project.modsPath ?? "";
                 path = project.path ?? "";
                 dataPath = project.dataPath ?? "";
+                folder = Path.GetDirectoryName(project.path) ?? "";
             }
             else {
                 expensive = false;
@@ -306,6 +308,7 @@ namespace Yafc {
                 modsPath = "";
                 path = "";
                 dataPath = "";
+                folder = "";
             }
             if (dataPath == "" && RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
                 string possibleDataPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), "Steam/steamApps/common/Factorio/data");
@@ -368,9 +371,15 @@ namespace Yafc {
         };
 
         private async void ShowFileSelect(string description, string path, EditType type) {
-            string? result = await new FilesystemScreen("Select folder", description, type == EditType.Workspace ? "Select" : "Select folder", type == EditType.Workspace ? Path.GetDirectoryName(path) : path,
-                type == EditType.Workspace ? FilesystemScreen.Mode.SelectOrCreateFile : FilesystemScreen.Mode.SelectFolder, "", this, GetFolderFilter(type),
+            DialogResult dialogResult = Dialog.FolderPicker(Path.GetDirectoryName(path));
+            string result = dialogResult.Path;
+            /*string? result = await new FilesystemScreen(
+             *       "Select folder", description, 
+             *       type == EditType.Workspace ? "Select" : "Select folder",
+             *       type == EditType.Workspace ? Path.GetDirectoryName(path) : path,
+                     type == EditType.Workspace ? FilesystemScreen.Mode.SelectOrCreateFile : FilesystemScreen.Mode.SelectFolder, "", this, GetFolderFilter(type),
                 type == EditType.Workspace ? "yafc" : null);
+            */
             if (result != null) {
                 if (type == EditType.Factorio) {
                     dataPath = result;
